@@ -9,9 +9,8 @@
 ## 一：提取子字符串
 
 - String.prototype.slice()
-
+- String.prototype.split()
 - String.prototype.substring()
-
 - ~~String.prototype.substr()----- 废弃 -----~~
 
 ### String.prototype.slice()
@@ -23,10 +22,13 @@
 > **返回值：新字符串**
 
 - beginIndex : 提取字符串的开始索引，默认为 0
+	
 		- 如果为负值，会被当做 beginIndex + str.length 来看待，也就是倒数第几个。例如，如果 beginIndex 为 -3，那么则看作是 str.length - 3 ，也就是倒数第 3 个
+	
 	- 如果 beginIndex >= str.length，则返回空字符串
 - endIndex : 提取字符串的结束索引（可选）
 		- 如果省略该参数，会一直提取到字符串末尾
+	
 	- 如果为负值，会被当做 endIndex+ str.length 来看待，也就是倒数第几个。例如，如果 endIndex为 -3，那么则看作是 str.length - 3 ，也就是倒数第 3 个
 - 新字符串包括 beginIndex 但不包括 endIndex
 - 如果转换成正数后， endIndex >= beginIndex ，则返回空字符串
@@ -53,6 +55,16 @@ console.log(str6); // he morning is up
 console.log(str7); // he morning is upon us.
 console.log(str8); // ""
 console.log(str9); // The mo
+```
+
+
+
+### String.prototype.split()
+
+> `split`方法按照给定规则分割字符串，返回一个由分割出来的子字符串组成的**数组**。
+
+```js
+'a|b|c'.split('|') // ["a", "b", "c"]
 ```
 
 ### String.prototype.substring()

@@ -541,9 +541,48 @@ SSL/TLS里使用的是混合加密方式。即把对称加密和非对称加密�
 
 
 
+### 8.基于HTTP的功能追加协议
+
+> 在建立 HTTP 标准规范时，制订者主要想把 HTTP 当作传输 HTML 文档的协议。随着时代的发展，Web 的用途更具多样性，比如演化成在线购物网站、SNS（Social Networking Service，社交网络服务）、企业或组织内部的各种管理工具，等等。而这些网站所追求的功能可通过 Web 应用和脚本程序实现。即使这些功能已经满足需求，在性能上却未必最优，这是因为 HTTP 协议上的限制以及自身性能有限.
+
+#### 8.1 HTTP的瓶颈
+
+> 在 Facebook 和 Twitter 等 SNS 网站上，几乎能够实时观察到海量用户公开发布的内容，这也是一种乐趣。当几百、几千万的用户发布内容时，Web 网站为了保存这些新增内容，在很短的时间内就会发生大量的内容更新。
+>
+> 使用 HTTP 协议探知服务器上是否有内容更新，就必须频繁地从客户端到服务器端进行确认。如果服务器上没有内容更新，那么就会产生徒劳的通信。
+
+若想在现有 Web 实现所需的功能，以下这些 HTTP 标准就会成为瓶颈。
+
+- 一条连接上只可发送一个请求。
+- 请求只能从客户端开始。客户端不可以接收除响应以外的指令。
+- 请求 / 响应首部未经压缩就发送。首部信息越多延迟越大。
+- 发送冗长的首部。每次互相发送相同的首部造成的浪费较多
+- 可任意选择数据压缩格式。非强制压缩发送
+
+![](http://showdoc.hongqiaomall.com.cn/server/index.php?s=/api/attachment/visitFile/sign/b71e7dc857a6024470cf162f3a35fb61&showdoc=.jpg)
+
+#### 8.2 Ajax的解决方法
+
+Ajax（Asynchronous JavaScript and XML， 异 步 JavaScript 与 XML 技术）是一种有效利用 JavaScript 和 DOM（Document Object Model，文档对象模型）的操作，以达到局部 Web 页面替换加载的异步通信手段。和以前的同步通信相比，由于它只更新一部分页面，响应中传输的数据量会因此而减少，这一优点显而易见。
+
+Ajax 的核心技术是名为 XMLHttpRequest 的 API，通过 JavaScript 脚本语言的调用就能和服务器进行 HTTP 通信。借由这种手段，就能从已加载完毕的 Web 页面上发起请求，只更新局部页面。
+
+而利用 Ajax 实时地从服务器获取内容，有可能会导致大量请求产生。另外，Ajax 仍未解决 HTTP 协议本身存在的问题。
+
+![](http://showdoc.hongqiaomall.com.cn/server/index.php?s=/api/attachment/visitFile/sign/f8b96b77332431addaf694514fe82f84&showdoc=.jpg)
+
+#### 8.3 Comet 的解决方法
+
+一旦服务器端有内容更新了，Comet 不会让请求等待，而是直接给客户端返回响应。这是一种通过延迟应答，模拟实现服务器端向客户端推送（Server Push）的功能。
+
+通常，服务器端接收到请求，在处理完毕后就会立即返回响应，但为了实现推送功能，Comet 会先将响应置于挂起状态，当服务器端有内容更新时，再返回该响应。因此，服务器端一旦有更新，就可以立即反馈给客户端。
+
+内容上虽然可以做到实时更新，但为了保留响应，一次连接的持续时间也变长了。期间，为了维持连接会消耗更多的资源。另外，Comet也仍未解决 HTTP 协议本身存在的问题
 
 
 
+![](http://showdoc.hongqiaomall.com.cn/server/index.php?s=/api/attachment/visitFile/sign/0de511640a8d06c9e8eb47ddaa27f3a9&showdoc=.jpg)
 
+#### 8.4 使用浏览器进行全双工通信的WebSocket
 
-
+一旦 Web 服务器与客户端之间建立起 WebSocket 协议的通信连接，之后所有的通信都依靠这个专用协议进行。通信过程中可互相发送JSON、XML、HTML 或图片等任意格式的数据。由于是建立在 HTTP 基础上的协议，因此连接的发起方仍是客户端，而一旦确立 WebSocket 通信连接，不论服务器还是客户端，任意一方都可直接向对方发送报文。

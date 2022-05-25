@@ -422,6 +422,8 @@ Content-Type: text/html; charset=UTF-8
 #### 5.8 为 Cookie 服务的首部字段
 
 >  Cookie 的工作机制是用户识别及状态管理
+>
+>  Cookie 是浏览器访问服务器后，**服务器传给浏览器的一段数据**。
 
 **为 cookie 服务的首部字段:**
 
@@ -446,6 +448,10 @@ Content-Type: text/html; charset=UTF-8
 
 - `HttpOnly`：该属性使得 JavaScript 无法对 Cookie 进行读取操作。
 
+
+#### 5.9 注意区别HTTP缓存，cookie，Session
+
+https://www.jianshu.com/p/0f5f6bb425cd
 
 ### 6.从一个http请求来看网络分层原理
 

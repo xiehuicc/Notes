@@ -8,7 +8,7 @@
 
 为了提高性能，内核提供了**非阻塞I/O**。非阻塞I/O跟阻塞I/O差别为调用之后会**立即返回**。但非阻塞I/O也存在一些问题，由于完整的I/O并没有完成，立即返回的并不是业务层期望的数据，而仅仅是**当前调用的状态**。为了获得完整的数据，需要重复调用I/O操作来确认是否完成。这种重复调用的判断操作是否完成的技术叫做**轮询**。
 
-### 2.Node的异步I/O
+### 2. Node的异步I/O
 
 > 介绍完系统的对异步I/O的支持后，我们继续介绍Node是如何实现异步I/O的。
 
@@ -19,6 +19,19 @@
 > 在进程启动时，Node便会创建一个类似while（true）的循环，每执行一次循环体的过程称为Tick。每个Tick的过程就是查看是否有事件待处理，如果有，就取出事件及相关的回调函数。如果不再有事件处理，就退出进程。
 
 ![](http://showdoc.hongqiaomall.com.cn/server/index.php?s=/api/attachment/visitFile/sign/d87d1cad6e5d46e73dae7be448ecf5a4&showdoc=.jpg)
+
+#### 2.2 Node循环事件的阶段
+
+**一次完整的事件循环Tick分成很多个阶段：**
+
+- 1. 定时器（Timers）：本阶段执行已经被setTimeout()和setInterval()的调度的回调函数
+- 2. 待定回调（pending callback）：对某些系统操作（如TCP错误类型）执行回调，比如TCP连接时收到ECONNREFUSED
+- 3. idle，prepare：仅系统内部使用
+- 4. 轮询（Poll）：检查新的I/O事件；执行与I/O相关回调
+- 5. 检测：setImmediate() 回调函数在这里执行
+- 6. 关闭的回调函数：一些关闭的回调函数，如：socke.on('close',...)
+
+
 
 #### 2.2观察者模式
 

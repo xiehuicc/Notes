@@ -164,3 +164,13 @@ node_modules/**/index.js
 #### `.npmignore`
 
 > 忽略`npm`包中的东西
+
+
+
+### 常用指令
+
+- git log ：查看提交记录
+
+  - git log --stat  查看提交记录，包括了提交的 哪些文件记录
+
+    

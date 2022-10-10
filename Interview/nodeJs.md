@@ -33,3 +33,43 @@
 - 对于复合类型的数据（主要是数组和对象），变量指向的栈内存地址，保存的是一个栈内存指针（该指针指向堆内存地址），`const`保证的是栈内存中保存的指针不得改动。
 - 对于简单类型（数值、字符串、布尔值），值就保存在变量指向的那个栈内存地址，`const`保证的是栈内存地址所保存的数据不得改动。
 
+*****
+
+
+
+### 2. 模块化机制理解
+
+
+
+#### 2.1 require的加载机制
+
+
+
+#### 2.2 module.exports 和 exports的区别
+
+> 为了实现模块的导出，Node中使用的是Module的类，每一个模块都是Module的一个实例，也就是module;（每一个js文件都有一个module对象）
+>
+> 为了方便，Node为每个模块提供一个exports变量，指向module.exports。
+
+exports 相当于 module.exports 的快捷方式如下所示:
+
+```js
+var exports = module.exports;
+```
+
+但是要注意，不能改变exports的指向，而module.exports可以改变指向
+
+```js
+// 错误的写法 将会得到 undefined
+exports = {
+  'a': 1,
+  'b': 2
+}
+
+// 正确的写法 module.exports = {},会在堆内存中新开辟一个内存空间
+modules.exports = {
+  'a': 1,
+  'b': 2
+}
+```
+

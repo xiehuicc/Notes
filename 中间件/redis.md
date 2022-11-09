@@ -60,27 +60,47 @@
   - 集合的交集运算A^B:  属于A但同时属于B的元素构成的集合；sinter key[key...]
   - 集合的并集运算A U B：属于A或者属于B的元素合并后的集合；sunion key[key...]
 
+
+
 **应用场景**
 
-    1. 微信抽奖小程序
+1. 微信抽奖小程序
      1. 用户ID，立即参与抽奖；sadd key 用户ID
      2. 显示已经有多少人参与了；scard key
      3. 抽奖（从set中任选取N个人中奖）srandmember key 2 ，随机两人，元素不删除； spop key 3 ，随机3人，元素会删除
-    2. 微信朋友圈点赞
-
+2. 微信朋友圈点赞
        1. 新增点赞； sadd pub:msgId 点赞用户id1 点赞用户id2
-       2. 取消点赞：srem pub:msgId 点赞用户id
-       3. 展现所有点赞用户：smember pub:msgId
-       4. 点赞用户数统计，就是常见的点赞红色数字：scard pub:msgId
-       5. 判断某个朋友是否对楼主点赞：sismember pub:msgId 用户Id
-    3. 微博好友关注社交关系
-       1. 共同关注的人：交集
-       2. ​
-    4. QQ内推可能认识的人： 差集 交集
+           2. 取消点赞：srem pub:msgId 点赞用户id
+           3. 展现所有点赞用户：smember pub:msgId
+           4. 点赞用户数统计，就是常见的点赞红色数字：scard pub:msgId
+           5. 判断某个朋友是否对楼主点赞：sismember pub:msgId 用户Id
+3. 微博好友关注社交关系
+          1. 共同关注的人：交集
+          2. 
+4. QQ内推可能认识的人： 差集 交集
 
 #### 5. Zset
 
-- ​
+- 添加元素：zadd key score member [score member...]
+- 按照元素分数从小到大排序，返回索引从start到stop之间的所有元素：zrange key start stop [withscores]
+- 获取元素分数：zscore key member
+- 删除元素：  zrem key member [key member...]
+- 获取指定分数范围的元素： zrangebyscore key min max [withscores] [limit offset count ]
+- 增加某个元素的分数：zincreby key increment member 
+- 获取集合中元素数量：zcard key
+- 获取指定分数范围内的元素个数：zcount key mix max
+- 按照排名范围删除元素： zremrangebyrank key start stop
+- 获取元素排名：从小到大：zrank key member;   从大到小:  zrevrank key member
+
+### 6. bitmap
+
+
+
+> Bit arrays ，我们称之为位图
+>
+> 位图本质是数组，它是基于
+
+
 
 **应用场景**
 
@@ -88,6 +108,38 @@
 
 1. 根据商品销售对商品进行排序显示
 2. 抖音热搜
+
+展示当日排名前10 条：zrevrange hotvcr: 20200919 0 9 withscores
+
+
+
+### 面试
+
+#### 一：
+
+- App中的每天的用户登录信息： 1天对应1系列用户ID或者移动设备ID；
+- 电商网站上商品的用户评论列表：1个商品对应1系列的评论；
+- 用户在手机App上的签到打卡信息：1天对应1系列用户的签到记录；
+- 应用网站上的网页访问信息：1个网页对应1系列的访问点击；
+
+#### 二：
+
+- 在移动应用中，需要统计每天新增用户数和第2天的留存用户数；
+- 电商网站上商品评论中，需要统计评论列表中最新的评论；
+- 在签到打卡中，需要统计一个月内连续打卡的用户数；
+- 在网页访问记录中，需要统计独立访客量；
+
+痛点：类似今日头条，抖音，淘宝，这样的访问都是亿级别，请问如何处理？
+
+**亿级数据的收集+统计**
+
+存的进 + 取的快 + 多统计
+
+1. 数据收集
+2. 数据清洗
+3. 数据统计
+
+
 
 
 ### redis缓存案列

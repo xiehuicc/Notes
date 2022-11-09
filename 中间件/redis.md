@@ -92,14 +92,6 @@
 - 按照排名范围删除元素： zremrangebyrank key start stop
 - 获取元素排名：从小到大：zrank key member;   从大到小:  zrevrank key member
 
-### 6. bitmap
-
-
-
-> Bit arrays ，我们称之为位图
->
-> 位图本质是数组，它是基于
-
 
 
 **应用场景**
@@ -111,7 +103,70 @@
 
 展示当日排名前10 条：zrevrange hotvcr: 20200919 0 9 withscores
 
+### 6. bitmap
 
+![](E:\Typora\Notes\图片\bitmap.jpg)
+
+> Bit arrays ，我们称之为位图
+>
+> bitmap 底层是string类型
+>
+> 位图本质是数组，该数组是由二进制数 0 1组成,每一个二进制位都对应一个偏移量（称之为一个索引或位格）
+>
+> bitmap支持的最大位数是2^32位，可以极大节省空间，使用512M内存就可以存储42.9亿（2^32）的字节信息
+
+
+
+基本命令
+
+- 给指定key值的第offset赋值val： setbit key offset value
+- 获取指定key值的offset位： gitbit key offset
+- 返回指定key中[start,end]中为1的数量：bitcount key [start end]
+- 对不同二进制存储数据进行位运算（AND，OR，NOT，XOR）：bitop operation destkey key 
+- strlen：统计字节数占用多少
+- 
+
+**bitmap底层编码说明**
+
+![](E:\Typora\Notes\图片\bitmap底层原理.jpg)
+
+对应的ascii码值
+
+**应用场景**
+
+- 用户用户统计：yes/no， 
+
+- 用户是否登陆过，（Y,N），比如京东每日签到送京豆
+
+- 电影，广告是否被点击播放过
+
+- 钉钉打卡，签到统计
+
+- 真实案列
+
+  - 日活统计
+  - 连续签到打卡
+  - 统计用户一年之内的登陆天数
+  - 一年内，那几天登陆过？那几天没登陆？
+
+  **签到用户体量大时（千万上亿的数据量）** 如何解决这个痛点：
+
+  > 1. 一条签到对应一条记录，会占据越来越大的空间
+  > 2. 一个月最多31天，刚好bitmap int型是32位，这样一个int型就可以存储一个月
+  > 3. 一条数据直接存储一个月的签到记录
+
+  ```shell
+  # 按月统计
+  # 202205 1号 签到
+  setbit sign:u1 202205 1 1
+  setbit sign:u1 202205 30 1
+  
+  # 按年统计
+  setbit sign:u1 2022 5 1
+  setbit sign:u1 2022 364 1
+  ```
+
+  一亿位bitmap约占内存12M（10^8/8/1024/1024）
 
 ### 面试
 
@@ -130,6 +185,8 @@
 - 在网页访问记录中，需要统计独立访客量；
 
 痛点：类似今日头条，抖音，淘宝，这样的访问都是亿级别，请问如何处理？
+
+
 
 **亿级数据的收集+统计**
 
@@ -171,3 +228,4 @@
 1. 对于在redis没有查询到的数据，进来就先加锁，保证一个请求操作，让外面的redis等待一下，避免缓存击穿
 2. 加锁后再查redis，二查redis还是null，可以去查询mysql
 3. 查询mysql有数据，需要写回redis，完成数据的一致性工作
+

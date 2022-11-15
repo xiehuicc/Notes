@@ -136,7 +136,7 @@ zset做法
 - 返回指定key中[start,end]中为1的数量：bitcount key [start end]
 - 对不同二进制存储数据进行位运算（AND，OR，NOT，XOR）：bitop operation destkey key 
 - strlen：统计字节数占用多少
-- 
+- ​
 
 **bitmap底层编码说明**
 
@@ -172,15 +172,15 @@ zset做法
   # 202205 1号 签到
   setbit sign:u1 202205 1 1
   setbit sign:u1 202205 30 1
-  
+
   # 按年统计
   setbit sign:u1 2022 5 1
   setbit sign:u1 2022 364 1
   ```
 
   一亿位bitmap约占内存12M（10^8/8/1024/1024）
-  
-  
+
+  ​
 
 #### 7. hyperloglog
 
@@ -216,7 +216,7 @@ zset做法
 
 - 不是集合也不保存数据，只是记录数量而不是具体内容
 - 有误差 仅为0.81%
-- 
+- ​
 
 **基本命令**
 
@@ -225,6 +225,58 @@ zset做法
 - pfmerge new_key key1 key2：合并key1，key2到新key中
 
 #### 8.GEO
+
+类型是Zset
+
+**基本命令**
+
+- geoadd：多个经度（longitude）、纬度（latitude）、位置名称(member)添加到指定的key
+- geopos：从给定key里面返回所有指定名称(member)的位置（经度和纬度）
+- geodist：返回两个给定位置之间的距离
+- georadius：以给定的经纬度为中心，返回与中心的距离不超过给定最大距离的所有地理位置集合（以半径为中心，查找附近的XX）
+- georadiusbymember：跟georadius类似
+- geohash：返回一个或多个位置元素的geohash表示
+
+**实例**
+
+```shell
+#geoadd key longitude latitude member [longitude latitude member...]
+geoadd city 116.403963 39.915119 "天安门"
+
+#geopos key member [member...]
+geopos city 天安门 故宫
+
+#geodist key member1 member2 [m|km|ft|mi]
+geodist city 天安门 故宫 m
+ 
+georadius city  116.403963 39.915119 10 km withdist withcoord count 10
+# withdist: 返回位置的同时，将位置元素与中心之间的距离也一并返回
+# widthcoord：将位置元素的经纬度也一并返回
+# withhash：以52位有符号整数的形式，返回位置元素经过原始geohash编码的有序集合分值。这个选项主要用于底层应用和调试，实际中作用不大
+# count 限定返回的记录数
+
+#geohash key member
+geohash city 天安门 故宫
+
+```
+
+### 2. 布隆过滤器(BloomFilter)
+
+**考题**
+
+> 现在有50亿个电话号码，现有10万个电话号码，如何快速准确判断这些电话号码已经存在？
+>
+> 50亿*8字节 大约40G
+>
+> 通常我们判断一个元素是否存在于集合中的场景，一般是想到把集合中的所有元素保存起来，然后在比较确定。链表，树，散列表，等等数据结构都是这个思路
+
+
+
+**是什么**
+
+> 布隆过滤器是一个很长的二进制数组 + 一系列随机hash算法映射函数，主要用于判断一个元素是否在集合中。（bitmap + 分布均与的多个hash算法构成的集合）
+>
+> 
 
 ### 面试
 

@@ -365,7 +365,9 @@ select 字段列表 from 表1 [inner] join 表2 on 连接条件
 select 字段列表 from 表1 left  outer join 表2 on 条件
 ```
 
-查询出表1的所有数据和 表1和表2交集的数据
+查询出表1的所有数据 和 表1表2交集的数据
+
+左表的数据将会全部展示出来，而右表只会显示符合条件的记录
 
 右外连接：
 
@@ -385,3 +387,206 @@ select 字段列表 from 表2 right outer join 表1 on 条件
 select 字段列表 from 表A 别名A join 表A 别名B on 条件
 ```
 
+
+
+#### 5.6 联合查询（union union all）
+
+> 对于联合查询，就是把多次的查询结果合并起来，形成一个新的查询结果集。
+
+语法：
+
+```sql
+select 字段列表 from 表A ...
+union [all]
+select 字段列表 from 表B ...
+```
+
+union all  直接把查询的结果进行合并
+
+union 查询的结果会去重
+
+**注意**
+
+对于联合查询的多张表的列数必须保持一致，字段类型也要保持一致
+
+
+
+#### 5.7 子查询
+
+> SQL语句中嵌套select语句，称为**嵌套查询**，又称子查询
+
+语法：
+
+```sql
+select * from table1 where column1 = (select column1 from table2)
+```
+
+子查询外部的语句可以是insert/update/delete/select的任何一个 
+
+
+
+p48 -p49多表查询练习
+
+
+
+
+
+### 6. 事务
+
+> 事务是 一组操作的集合，它是一个不可分割的工作单位，事务会把所有的操作作为一个整体一起向系统提交或者撤销操作请求，即这些操作**要么同时成功，要么同时失败**。
+>
+> 默认MySQL的事务是自动提交的，也就是说，当执行一条DML语句时，MySQL会立即隐式的提交事务。
+
+
+
+#### 6.1  事务操作
+
+查看/设置事务提交方式
+
+```sql
+select @@autocommit
+# 设置为手动提交
+set @@autocommit=0
+```
+
+提交事务
+
+```sql
+commit;
+```
+
+回滚事务
+
+```sql
+rollback
+```
+
+开启事务
+
+```sql
+start transaction 或 begin;
+```
+
+
+
+#### 6.2 事务四大特性（ACID）
+
+- 原子性（Automicity）:事务是不可分割的最小操作单元，要么全部成功，要么全部失败
+- 一致性（Consistency）：事务完成时，必须使所有的数据都保持一致状态
+- 隔离性（Isolation）：数据库系统提供的隔离机制，保证事务在不受外部并发操作影响的独立环境下运行
+- 持久性（Durability）：事务一旦提交或者回滚，它对数据库中的数据的改变就是永久的
+
+
+
+#### 6.3 并发事务问题
+
+1. 脏读
+
+   一个事务读到另一个事务还**没有提交**的数据
+
+2. 不可重复读
+
+   一个事务先后读取同一条记录，但**两次读取的数据不同**，称之为不可重复读
+
+3. 幻读
+
+   一个事务按照条件查询数据时，没有对应的数据行，但是在插入数据时，又发现这行数据已经存在了，好像出现了幻影
+
+   例如：在同一事务中就可能出现第一次查询没有，第二次查询就有，出现insert 出现重复数据
+
+
+
+#### 6.4 事务的隔离级别
+
+| 隔离级别                | 脏读   | 不可重复读 | 幻读   |
+| ------------------- | ---- | ----- | ---- |
+| Read uncommited     | √    | √     | √    |
+| Read commited       | ×    | √     | √    |
+| Repeatable Read（默认） | ×    | ×     | √    |
+| Serializable        | ×    | ×     | ×    |
+
+MySQL 默认隔离级别是Repeatable Read(可重复读) ，有可能会出现幻读的情况；
+
+从上往下性能越差；
+
+事务隔离级别越高，数据越安全，但性能越低。
+
+
+
+查看事务隔离级别
+
+```sql
+select @@transaction_isolation
+```
+
+设置事务隔离级别
+
+```sql
+set [session|global] transaction isloation level {Read uncommited | Read commited | Repeatable Read | serializable}
+```
+
+
+
+### 7. 存储引擎
+
+#### 7.1 MySQL体系结构 
+
+![img](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d9d1701cbbf9409bb671a72ae7a61466~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)
+
+连接层；
+
+服务层
+
+引擎层
+
+存储层
+
+
+
+#### 7.2 存储引擎简介
+
+> 存储引擎就是存储数据，建立索引，更新/查询数据等技术的实现方式。存储引擎是基于表的，而不是基于库的，所以存储引擎也被称为表类型。
+
+在创建表时，指定存储引擎
+
+```sql
+create table 表名(
+	字段1 字段类型 [comment 字段1注释]
+  	...
+ 
+)ENGIN = INNODB [comment 表注释];
+```
+
+查看数据库支持的引擎
+
+```sql
+show engins; 
+```
+
+
+
+#### 存储引擎特点
+
+
+
+**innodb**
+
+介绍
+
+> innodb 是一种兼顾可靠性和高性能的通用存储引擎，在MySQL5,5之后，Innodb是默认的MySQL存储引擎
+
+特点
+
+- DML操作遵循ACID模型，支持**事务**
+- **行级锁**，提高并发访问性能
+- 支持**外键** foreign key 约束，保证数据的完整性和正确性
+
+文件
+
+xxx.ibd：xxx代表表名，innodb引擎的每一张表都会有对应一个这样的表空间文件，存储标的结构，数据和索引
+
+参数：innodb_file_per_table
+
+
+
+#### 存储引擎选择

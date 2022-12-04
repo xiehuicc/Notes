@@ -654,9 +654,265 @@ xxx.ibd：xxx代表表名，innodb引擎的每一张表都会有对应一个这�
 
 
 
-**索引结构**
+#### 8.2 索引结构
 
 - B+ Tree索引：大部分引擎支持B+树索引
 - Hash索引：底层数据结构是用hash表实现的，只有精确匹配索引的查询才有效，不支持范围查询
 - R-Tree(空间索引)：是MyISAM引擎的一种特殊索引类型，主要用于地理空间数据类型，通常使用较少
 - Full-text(全文索引)：是通过建立倒排索引，快速匹配文档的方式。
+
+
+
+#### 8.3 B-Tree（多路平衡查找树）
+
+以一棵最大度数为5（5阶）的b-tree为例，每个节点最多存储4个key，5个指针
+
+
+
+#### 8.4 B+ Tree
+
+以一颗最大度数为（max-degree）为4（4阶）的b+Tree
+
+![image-20221204145902594](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221204145902594.png)
+
+![image-20221204145911175](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221204145911175.png)相对于B-Tree区别：
+
+- 所有的数据都会出现在叶子节点
+- 叶子节点形成一个单向链表
+
+
+
+#### 8.5 Mysql中的B+Tree
+
+MySQL索引数据结构对经典B+Tree进行了优化，在原有B+Tree的基础上，增加了一个指向相邻节点的链表指针，就形成了带有顺序指针的B+Tree，提高区间访问性能。
+
+![image-20221204150051804](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221204150051804.png)
+
+![image-20221204150114909](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221204150114909.png)
+
+
+
+#### 8.6 Hash索引
+
+> hash索引就是采用一定的hash算法，将键值换成新的hash值，映射到对应槽位上，然后存储在hash表中。
+>
+> 如果两个（或多个）键值，映射到同一槽位上，就产生了hash冲突（也称为hash碰撞），可以通过链表来解决，
+
+
+
+**hash索引特点**
+
+1. hash索引只能用于对等比较（= ，in），不支持范围查询（between，<，>，...）
+2. 无法利用索引完成排序操作
+3. 查询效率高，通常只需要一次检索就可以了，效率通常要高于B+Tree索引
+
+
+
+**存储引擎支持**
+
+在MySQL中，支持hash索引的是Memory引擎，而Innodb中，具有自适应hash功能，hash索引是存储引擎根据B+Tree索引在指定条件下构建的。
+
+​	
+
+#### 8.7 思考选择B+Tree原因
+
+
+
+**为什么InnoDB引擎选择使用B+Tree索引结构？**
+
+- 相对于二叉树，层级更少，搜索效率高；
+- 对于B-tree，无论是叶子节点还是非叶子节点，都会保留数据，这样导致一页中存储的键值减少，指针跟着减少。要存储相同的数据量，B-Tree的层级会更高，导致性能降低。（关键是在树的高度上）
+
+
+
+#### 8.8 索引的分类
+
+| 分类     | 含义                                             | 特点                     | 关键字   |
+| -------- | ------------------------------------------------ | ------------------------ | -------- |
+| 主键索引 | 针对表中主键创建的索引                           | 默认自动创建，只能有一个 | PRIMARY  |
+| 唯一索引 | 避免一个表中某数据列中的值重复                   | 可以有多个               | UNIQUE   |
+| 常规索引 | 快速定位特定数据                                 | 可以有多个               |          |
+| 全文索引 | 全文索引查找的是文本种的关键词，而不是索引中的值 | 可以有多个               | FULLTEXT |
+
+
+
+在InnoDB存储引擎中,根据索引的储存形式，又可以分为两种：
+
+| 分类                        | 含义                                                     | 特点               |
+| --------------------------- | -------------------------------------------------------- | ------------------ |
+| 聚集索引（Clustered Index） | 将数据存储于索引放在一起，索引结构的叶子节点保存了行数据 | 必须有，且只有一个 |
+| 二级索引（Secondary Index） | 将数据与索引分开存储，索引结构的叶子节点关联的是对应主键 | 可以存多个         |
+
+
+
+聚集索引的选取规则：
+
+- 如果存在主键，主键索引就是聚集索引
+- 如果不存在主键，将使用第一个唯一（UNIQUE）索引作为聚集索引
+- 如果没有主键，也没有唯一索引，则InnoDB会自动生成一个rowId作为隐藏的聚集索引
+
+
+
+![image-20221204153731656](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221204153731656.png)
+
+![image-20221204153743245](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221204153743245.png)
+
+
+
+**聚集索引叶子节点挂的是数据；**
+
+**二级索引叶子节点挂的是id；**
+
+
+
+例子：
+
+查询的是name=‘Arm‘，先到二级索引中找到Arm，通过id再到聚集索引中查找该id下存储的数据
+
+![image-20221204153952165](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221204153952165.png)
+
+![image-20221204153956927](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221204153956927.png)
+
+
+
+#### 8.9 思考题
+
+
+
+**InnoDB主键索引的B+Tree高度为多高呢？**
+
+![image-20221204154534275](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221204154534275.png)
+
+![image-20221204154539812](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221204154539812.png)
+
+高度为3的B+Tree就可以存储两千多万的记录
+
+
+
+#### 8.10 索引语法
+
+
+
+**创建索引**
+
+```sql
+create [UNIQUE][FULLTEXT] index index_name on table_name (index_col_name,...);
+```
+
+
+
+**查看索引**
+
+```sql
+show index from table_name;
+```
+
+
+
+**删除索引**
+
+```sql
+drop index index_name on table_name;
+```
+
+
+
+例子：（user表）
+
+1. name字段为姓名字段，该字段的值可能重复，为该字段创建索引
+
+   ```sql
+   create index idx_user_name on user(name)
+   ```
+
+   
+
+2. phone手机号字段的值，是非空，且唯一的，为该字段创建唯一索引
+
+   ```sql
+   create UNIQUE index idx_user_phone on user(phone)
+   ```
+
+   
+
+3. 为profession，age，status，创建联合索引
+
+   ```sql
+   create index idx_user_pro_age_sta on user(profession,age,status)
+   ```
+
+   
+
+4. 为email建立合适的索引来提高查询效率
+
+   ```sql
+   create index idx_email on user(email)
+   ```
+
+
+
+#### 8.11 SQL性能分析
+
+
+
+**SQL执行频率**
+
+MySQL查看当前数据库的Insert ，Update，delete，select的访问频率
+
+session: 查看 当前会话信息
+
+global：全局
+
+```shosql
+show [session|global] status
+
+# 模糊查询，Com后面七个字符
+show global status like 'Com_______'
+```
+
+
+
+**慢查询日志**
+
+> 慢查询日志记录了执行时间超过指定参数（long_query_time ,单位：秒，默认10s）的所有SQL语句日志
+
+MySQL的慢查询日志默认未开启，需要在MySQL配置文件（/etc/my.cnf）中配置如下信息：
+
+```
+# 开启mysql慢查询日志
+slow_query_log = 1
+# 设置慢日志的时间为2s，SQL语句执行时间超过2s，就会视为慢查询，记录慢查询日志
+long_query_time = 2
+```
+
+慢日志文件中的记录信息在：
+
+/var/lib/mysql/localhost-slow.log
+
+
+
+**profile详情**
+
+show profile是能够在做SQL优化时，帮助我们了解时间都耗费在哪里。通过have_profiling参数，能够看到当前MySql是否支持profile操作：
+
+```sql
+# 查看是否支持profile
+select @@have_profiling;
+
+# 默认profiling是关闭的
+# 开启
+set [session|global] profiling = 1
+```
+
+
+
+**explain执行计划**
+
+explain或者desc命令获取mysql如何执行select语句信息，包括在select语句执行过程中，如何连接表和连接表顺序
+
+语法：
+
+```sql
+# 
+explain select 字段列表 from table where 条件
+```

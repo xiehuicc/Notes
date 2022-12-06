@@ -51,7 +51,6 @@ select 字段列表 from 表名 where 条件列表 group by 分组字段列表 h
   selest distinct  字段名 form 表名
   ```
 
-  
 
 - 条件查询(where)
 
@@ -727,21 +726,21 @@ MySQL索引数据结构对经典B+Tree进行了优化，在原有B+Tree的基础
 
 #### 8.8 索引的分类
 
-| 分类     | 含义                                             | 特点                     | 关键字   |
-| -------- | ------------------------------------------------ | ------------------------ | -------- |
-| 主键索引 | 针对表中主键创建的索引                           | 默认自动创建，只能有一个 | PRIMARY  |
-| 唯一索引 | 避免一个表中某数据列中的值重复                   | 可以有多个               | UNIQUE   |
-| 常规索引 | 快速定位特定数据                                 | 可以有多个               |          |
-| 全文索引 | 全文索引查找的是文本种的关键词，而不是索引中的值 | 可以有多个               | FULLTEXT |
+| 分类   | 含义                       | 特点           | 关键字      |
+| ---- | ------------------------ | ------------ | -------- |
+| 主键索引 | 针对表中主键创建的索引              | 默认自动创建，只能有一个 | PRIMARY  |
+| 唯一索引 | 避免一个表中某数据列中的值重复          | 可以有多个        | UNIQUE   |
+| 常规索引 | 快速定位特定数据                 | 可以有多个        |          |
+| 全文索引 | 全文索引查找的是文本种的关键词，而不是索引中的值 | 可以有多个        | FULLTEXT |
 
 
 
 在InnoDB存储引擎中,根据索引的储存形式，又可以分为两种：
 
-| 分类                        | 含义                                                     | 特点               |
-| --------------------------- | -------------------------------------------------------- | ------------------ |
+| 分类                    | 含义                           | 特点        |
+| --------------------- | ---------------------------- | --------- |
 | 聚集索引（Clustered Index） | 将数据存储于索引放在一起，索引结构的叶子节点保存了行数据 | 必须有，且只有一个 |
-| 二级索引（Secondary Index） | 将数据与索引分开存储，索引结构的叶子节点关联的是对应主键 | 可以存多个         |
+| 二级索引（Secondary Index） | 将数据与索引分开存储，索引结构的叶子节点关联的是对应主键 | 可以存多个     |
 
 
 
@@ -825,7 +824,6 @@ drop index index_name on table_name;
    create index idx_user_name on user(name)
    ```
 
-   
 
 2. phone手机号字段的值，是非空，且唯一的，为该字段创建唯一索引
 
@@ -833,7 +831,6 @@ drop index index_name on table_name;
    create UNIQUE index idx_user_phone on user(phone)
    ```
 
-   
 
 3. 为profession，age，status，创建联合索引
 
@@ -841,7 +838,6 @@ drop index index_name on table_name;
    create index idx_user_pro_age_sta on user(profession,age,status)
    ```
 
-   
 
 4. 为email建立合适的索引来提高查询效率
 
@@ -850,8 +846,7 @@ drop index index_name on table_name;
    ```
 
 
-
-#### 8.11 SQL性能分析
+#### 8.11  SQL性能分析
 
 
 
@@ -916,3 +911,311 @@ explain或者desc命令获取mysql如何执行select语句信息，包括在sele
 # 
 explain select 字段列表 from table where 条件
 ```
+explain 执行计划个字段的含义：
+
+- id：	select 查询的序列号，表示查询中执行select子句或者是操作表的顺序（id相同，执行顺序从上到下；id值不同，值越大，越先执行）（应为有可能多表查询，id会有多个）
+- select_type：表示select的类型，常见的取值有simple（简单表，即不使用表连接或者子查询）、primary（主查询，即外层查询）、union、subQuery等
+- type：表示连接类型，性能由好到差的连接类型为null，system，const，eq_ref，ref，rang，index，all
+- prossible_key：显示可能应用在这张表上的索引，一个或多个。
+- key：实际使用的索引，如果为null，则没有使用索引
+- key_len：表示索引中使用的字节数，改值为索引字段最大可能长度，并非实际使用长度，在不损失经度的前提下，长度越短越好
+- rows：mysql认为必须要执行的查询的行数，在Innodb引擎表中，可能是一个估计值，可能不总准确
+- filtered：表示返回结果的行数占需读取行数的百分比，filtered值越大越好。 
+
+
+
+#### 8.12 索引使用
+
+ **验证索引效率**
+
+ 为建立索引时查看 执行SQL耗时-->针对字段创建索引 -->执行相同SQL语句，查看耗时
+
+
+
+**索引使用**
+
+
+
+**索引失效的情况：**
+
+- 最左前缀法则：
+
+  如果索引了多列（联合索引），要遵循最左前缀法则。指的是查询从索引的最左列开始，并且不能跳过索引中的列。如果跳过某一列，索引将部分失效（后面的字段索引失效）
+
+  ```sql
+  explain select *from tb_user where professoin = '软件工程' and age = 31 and status = '0'
+
+  # 索引失效，因为不符合最左前缀法则
+  explain select *from tb_user where  age = 31 and status = '0'
+
+  # 索引部分（status）失效
+  explain select *from tb_user where  age = 31
+
+  # 索引部分（age,status）失效
+  explain select *from tb_user where  professoin = '软件工程' and status = '0'
+
+  # 索引成功的，因为只要最左的字段存在
+  explain select *from tb_user where status = ’0 and age =31 and professoin = '软件工程'
+  ```
+
+  ​
+
+- 范围查询
+
+  联合索引中，出现范围查询(>,<)，范围查询右侧的列索引失效。
+
+  ```sql
+  # 索引部分失效（status）
+  explain select * from tb_user where profession = '软件工程' and age > 30 and status = '0'
+
+  # 走索引（所以尽量使用>=或<=）
+  explain select * from tb_user where profession = '软件工程' and age >= 30 and status = '0'
+  ```
+
+
+
+- 索引列运算
+
+  不要在索引列上进行运算操作，否则索引将失效。
+
+- 字符串不加引号
+
+  字符串字段类型使用时，不加引号，索引将失效
+
+- 模糊查询
+
+  如果仅仅是尾部模糊匹配，索引不会失效。如果头部模糊匹配，索引将失效
+
+- or连接的条件
+
+  用or分割开的条件，如果or前的条件中的列有索引，而后面的列没有索引，那么涉及的索引都不会被用到。
+
+  ```sql
+  # 如：phone有索引，age没有索引
+  # 索引将失效
+  select * from tb_user phone='1331162808' or age = 31
+  ```
+
+  解决办法：只需要将age也建立索引
+
+- 数据分布影响
+
+  如果MySql评估使用索引比全表更慢，则不使用索引。
+
+  ```sql
+  # 如果 数据库中所有的phone都大于这个，走完索引，还需要回表查询，这比直接全表查询慢，mysql会直接不走索引。
+  select * from tb_user where phone > '1779999005'
+
+  select * from tb_user where phone >= '1779999015'
+  ```
+
+  ​
+
+**SQL提示**
+
+SQL提示，是优化数据库的一个重要手段，简单来说就是在SQL语句中加入一些人为的提示来达到优化操作的目的
+
+use index(如果一个字段有单列索引 又有联合索引，不指定的话mysql会自动选择)
+
+```sql
+select *from tb_user use index(idx_user_pro) where profession = '软件工程'
+```
+
+ignore index
+
+```sql
+select *from tb_user ignore index(idx_user_pro) where profession = '软件工程'
+```
+
+force index
+
+```sql
+select *from tb_user force index(idx_user_pro) where profession = '软件工程'
+```
+
+
+
+第一个use 是建议mysql，第三个force是强制使用；
+
+
+
+**覆盖索引**
+
+> 尽管使用覆盖索引（查询使用了索引，并且需要返回的列，在该索引中已经全部能够找到）减少使用select *
+>
+> 覆盖索引可以避免回表查询（只需要返回联合索引的字段时）
+
+
+
+**前缀索引**
+
+> 当字段类型为字符串（varchar, text 等）时，有时候需要索引很长的字符串，这会让索引变得很大，查询时，浪费磁盘io，影响查询效率。此时，可以只将字符串的一部分前缀，建立索引，这样可以大大节省空间。
+
+语法：
+
+```sql
+# 前n个字符建立索引
+create index idx_xxx on table_name（column(n));
+```
+
+前缀长度：
+
+可以根据索引的选择性来决定，而选择性是指不重复的索引值（基数）和表记录数比值，选择性越高，查询效率越高
+
+ 
+
+#### 8.13 索引设计原则
+
+1. 针对数据量较大，且查询较为频繁。（一百万以上的数据量）
+2. 针对于常作为查询条件（where），排序（order by），分组（group by） 操作的字段建立索引
+3. 尽量选择区分度高的列作为索引，尽量建立唯一索引，区分度越高，使用索引的效率越高
+4. 如果是字符串类型的字段，字段的长度较长，可以针对于字段特点，建立前缀索引
+5. 尽量使用联合索引，减少单列索引，查询时联合索引有时候可以覆盖索引，避免回表查询，提高查询效率
+6. 要控制索引的数量，索引不是多多益善，索引越多，维护索引的代价越大，会影响增删改的效率
+7. 如果索引列不能存储null值，请在创表时使用 not null约束它。当机器知道每列是否包含null值时，他可以更好的确定那个索引最有效的用于查询。
+
+
+
+### 9. SQL优化
+
+
+
+#### 9.1 插入数据优化
+
+- insert插入
+
+  批量插入：
+
+  ```sql
+  insert into tb_user values(1,'Tom'),(2,'cat'),(3,'Jerry')
+  ```
+
+  手动提交事务：
+
+  ```sql
+  start  transaction;
+  insert into tb_user values(1,'Tom'),(2,'cat'),(3,'Jerry');
+  insert into tb_user values(4,'Tom'),(5,'cat'),(6,'Jerry');
+  insert into tb_user values(7,'Tom'),(8,'cat'),(9,'Jerry');
+  commit;
+
+  ```
+
+  主键顺序插入：
+
+- 大批量插入数据
+
+  如果一次性需要插入大批量数据，使用insert语句插入性能较低，此时可以使用MySQL数据库提供的load指令进行插入。
+
+  可以直接将符合一定规则的文件（字段之间通过"," “：”或者其他字符分割），可以直接一次性通过load插入
+
+  ```sql
+  # 客户端连接服务器时，加上参数 --local-infile
+  mysql--local-infile -u root -p 
+  # 设置全局参数local_infile 为1 ，开启从本地加载文件导入数据的开关
+  set global local_infile = 1;
+  # 执行load指令，将准备好的数据，加载到表结构中;例： 每个字段分隔符为,每一行分隔符为换行
+  load data local infile '/root/sql.log' into table 'tb_user' fields terminated by ',' lines terminated by '\n';
+  ```
+
+  ​
+
+#### 9.2 主键优化
+
+- 数据的组织方式
+
+  在Innodb引擎中，表数据都是根据主键顺序组织存放的，这种存储方式的表称为**索引组织表**（IOT）。
+
+- 页分裂
+
+  页可以为空，也可以填充一半，或100%。（如果一行数据过大，会行溢出），根据主键排列。
+
+  主键乱序插入的情况，可能发生页分裂。
+
+- 页合并
+
+  当删除一行记录时，实际上记录并没有物理删除，只是记录被标记（flaged）为删除并且它的空间变得允许其他记录声明使用。
+
+  当页中删除的记录达到merge_threshold（默认为页的50%）,Innodb会开始寻找最靠近的页（前或后）看看是否可以将两个页合并以优化空间使用。
+
+- 主键的设计原则
+
+  - 满足业务需求的情况下，尽量降低主键的长度
+  - 插入数据时，尽量选择顺序插入，选择使用auto_inscrement自增主键
+  - 尽量不要使用UUID做主键或者其他自然主键，如身份证号
+  - 业务操作时，避免对主键的修改。
+
+
+
+#### 9.3 order by 优化
+
+1. using filesort ：通过表的索引或者全表扫描，读取满足条件的数据行，然后在排序缓冲区sort buffer中完成排序操作，所有不是通过索引直接返回的排序结果的排序都叫filesort排序
+
+2. using index：通过有序索引顺序扫描直接返回有序数据，这种情况即为using index，不需要额外排序，操作效率高。其中需要覆盖索引，没有覆盖索引的话，需要回表查询 还是会使用using filesort
+
+   ```sql
+   # 根据age，phone 进行一个降序，一个升序排列
+   # 可以给age创建一个降序索引，phone创建一个升序索引
+   create index idx_user_age_phone_da on (age desc, phone asc)
+   ```
+
+
+**总结：**
+
+- 根据排序字段建立合适的索引，多字段排序时，也遵循最左前缀法则
+- 尽量使用覆盖索引
+- 多字段排序，此时要注意联合索引在创建时的规则（ASC/DESC）
+- 如不可避免出现filesort，大数据量排序时，可以适当增大排序缓冲区大小sort_buffer_size（默认256k）
+
+
+
+#### 9.4 group by 优化
+
+ ```sql
+# 执行分组操作，根据profession 字段分组（此时profession 有联合索引）
+select profession, count(*) from tb_user group by profession;
+ ```
+
+- 在分组操作时，可以通过索引来提高效率
+- 分组操作时，索引的使用也是遵循最左前缀法则
+
+
+
+#### 9.5 limit 优化
+
+一个头疼的问题就是limit 20000000,10 ，此时需要MySQL排序前2000010记录，仅仅返回20000000 - 20000010的记录，其他记录丢弃，查询代价非常大。
+
+优化思路：一般分页查询时， 通过创建覆盖索引 比较好的提高性能，可以通过覆盖索引+子查询的方式进行优化。
+
+```sql
+select * from tb_user t, (select id form tb_suer order by id limit 20000000,10) a where t.id = a.id;
+```
+
+
+
+#### 9.6 count 优化
+
+- MyISAM引擎 把一个表的总行数存在了磁盘上，因此count(*)的时候直接返回这个数，效率很高
+- innodb引擎就麻烦了，它执行count(*)时，需要把数据一行一行读出来，再累计。
+
+优化思路：自己计数 （通过redis ...）
+
+**count 的几种用法：**
+
+>  count()是一个聚合函数，对于返回的结果，一行行判断，如果count函数的参数不是null，累计值+1。否则不加，最后返回累计值。统计的是不为null值的记录数
+
+- count(*)：专门做了优化，不会把全部字段取出来，直接按行累加。
+- count(主键)：取id值，直接按行累加
+- count(字段)：需要判断字段值是否为null，null则不计数。如果有not null约束，则不用判断
+- count(1)：innodb引擎遍历整张表，但不取值。服务层对于返回的每一行，放一个数字 1（随意数字） 进去，直接按行累加
+
+效率：count(字段) < count(主键 )< count(1) < count(*)
+
+#### 9.7 update 优化
+
+Innodb的行锁是针对索引加的锁，不是针对记录，并且该索引不能失效，否则，会从行锁升级为表锁。
+
+并发下，有索引，MySQL会行锁，没有索引 MySQL会表锁。
+
+
+

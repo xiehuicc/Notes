@@ -1219,3 +1219,110 @@ Innodb的行锁是针对索引加的锁，不是针对记录，并且该索引�
 
 
 
+### 10. 视图/存储过程/触发器
+
+
+
+#### 10.1 视图
+
+> 视图（view）是一种虚拟存在的表。视图中的数据在数据库中并不存在，行和列数据来自定义视图的查询中使用的表（基表），并且是使用视图动态生成的。
+>
+> 通常来讲，视图只保存了查询的SQL逻辑，不保存查询结果。所以我们在创建视图的时候，主要的工作就落在创建这条SQL查询语句上。
+
+- 创建视图
+
+  ```sql
+  create [or replace] view 视图名称[列名列表] as select语句 [with [cascaded | local] check option]
+
+  # example 
+  create or replace view stu_v_1 as select id,name from student where id <=10;
+  ```
+
+- 查询
+
+  ```sql
+  # 查询创建视图语句：
+  show create view 视图名称;
+
+  # 查询视图数据：
+  select * from 视图名称...;
+
+  ```
+
+- 修改
+
+  ```sql
+  # 方式一：
+  create [or replace] view 视图名称[列名列表] as select 语句[with [cascaded | local] check option]
+
+  # 方式二：
+  alter view 视图名称[列名列表] as select 语句[with [cascaded | local] check option]
+  ```
+
+- 删除 
+
+  ```sql
+  drop view [if exists] 视图名称 [,视图名称]...
+  ```
+
+- 视图的检查选项
+
+  当使用with check option 子句创建视图时，MySQL会通过视图检查正在更改的每一行，例如，插入，更新，删除，以使其符合视图定义。MySQL允许基于另一个视图创建视图，它还会检查依赖视图中的规则以保持一致性。 为了确认检查范围，MySQL提供两个选项：cascaded 和local，默认为cascaded。
+
+  ```sql
+  create or replace view stu_v_1 as select id,name from student where id <=20 with cascaded option;
+
+  插入，更新，删除会检查 id <=20 条件
+
+  # 创建stu_v_1视图
+  create or replace view stu_v_1 as select id,name from student where id <=20;
+  # 基于stu_v_1 创建的视图
+  create or replace view stu_v_2 as select id ,name form stu_v_1 where id>= 10 with cascaded;
+  ```
+
+  local和cascaded（级联）的区别：
+
+  local：遵循自己和（往上递归查询）爸爸的规则，若爸爸没有检查选项，则不需要满足爸爸的规则。
+
+  cascaded：遵循全家人的规则，stu_v_2 添加了检查选项，stu_v_1视图的规则也需要遵循了。
+
+**视图的更新**
+
+要使视图可更新，视图中的行与基础表中的行之间必须存在一对一的关系。如果视图包含一下任意一项，则该视图不可更新：
+
+1. 聚合函数或窗口函数（sum() ,MIN(),MAX(),COUNT()等）
+2. distinct
+3. group by
+4. having
+5. union 或者union all
+
+
+
+**作用**
+
+- 简单
+
+  视图不仅可以简化用户对数据的理解，也可以简化他们的操作。那些经常使用的查询语句可以被定义为视图，从而使得用户不必为以后的操作每次指定全部条件。
+
+- 安全
+
+  数据库可以授权，但不能授权到数据库特定行和特定列上。通过视图用户只能查询和修改他们所能见到的数据。（敏感数据 比如：钱）
+
+- 数据独立
+
+  视图可以帮助用户屏蔽真实表结构变化带来的影响。（数据库表字段更改时，可以修改视图 给表字段取别名）
+
+- 多表联查
+
+  如果需要多表联查，三表联查，可以将查询的结果定义为一张视图，以后直接查询视图就可以了。
+
+
+
+#### 10.2 存储过程
+
+> 存储过程是实现经过编译并存储在数据库中的一段SQL语句集合，调用存储过程可以减少数据库和应用服务器之间的传输，提高数据处理效率。
+>
+> 存储过程思想 就是数据库SQL语言层面的代码封装和重用。
+>
+> 例：有一个业务需要先查，再更新表1，再更新表2，可以将这些SQL语句存储在数据库，应用层面只需调用 
+

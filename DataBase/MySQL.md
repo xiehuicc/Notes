@@ -913,6 +913,6 @@ explain或者desc命令获取mysql如何执行select语句信息，包括在sele
 语法：
 
 ```sql
-# 
-explain select 字段列表 from table where 条件
+# select 前加上explain或desc
+explain select 字段列表 from table where 条件;
 ```

@@ -117,7 +117,7 @@ zset做法
 
 #### 6. bitmap
 
-![](E:\Typora\Notes\图片\bitmap.jpg)
+![](E:\Typora\Notes\Images\bitmap.jpg)
 
 > Bit arrays ，我们称之为位图
 >
@@ -140,7 +140,7 @@ zset做法
 
 **bitmap底层编码说明**
 
-![](E:\Typora\Notes\图片\bitmap底层原理.jpg)
+![](E:\Typora\Notes\Images\bitmap底层原理.jpg)
 
 对应的ascii码值
 

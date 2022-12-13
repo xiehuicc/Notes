@@ -1330,3 +1330,226 @@ Innodb的行锁是针对索引加的锁，不是针对记录，并且该索引�
 > 存储过程思想 就是数据库SQL语言层面的代码封装和重用。
 >
 > 例：有一个业务需要先查，再更新表1，再更新表2，可以将这些SQL语句存储在数据库，应用层面只需调用 
+
+
+
+- 创建
+
+  ```sql
+  create procedure 存储过程名称([参数列表])
+  begin 
+  	--SQL语句
+  end;
+  
+  #example
+  create procedure p1()
+  begin
+  	select count(*) from student;
+  end;
+  
+  ```
+
+- 调用
+
+  ```sql
+  call 名称([参数]);
+  
+  # 
+  call p1()
+  ```
+
+- 查看
+
+  ```sql
+  # 查询指定数据库的存储过程及状态信息
+  select * from infromation_schema.routines where routine_shcema = 'xxx';
+  
+  #  查询某个存储过程的定义
+  show create procedure 存储过程名称;
+  ```
+
+- 删除
+
+  ```sql
+  drop procedure [if exists] 存储过程名称;
+  ```
+
+**注意：**
+
+在命令行中，执行创建存储过程的SQL时，需要通过关键字delimiter指定SQL语句的结束符。
+
+因为分号只是代表SQL语句的结束，不代表储存过程的结束。
+
+```sql
+# 指定$结束存储过程
+delimiter $
+create procedure p1()
+begin
+	select count(*) from student;
+end$
+```
+
+
+
+##### 变量
+
+**系统变量**
+
+> 系统变量 是MySQL服务器提供的，不是用户定义的，属于服务器层面。分为全局变量（global）、会话变量（session）。
+
+
+
+- 查看系统变量
+
+```sql
+# 查看所有变量  (默认session级别)
+show [session|global] variables;
+
+# 可以通过模糊匹配方式查找变量
+show [session|global] variables like '....'
+
+# 查看指定系统变量值
+select @@[session|global] 系统变量名;
+```
+
+
+
+- 设置系统变量
+
+```sql
+set [session|global] 系统变量 = 值;
+set @@[session|global] 系统变量名 = 值;
+```
+
+
+
+**用户变量**
+
+> 用户变量 是用户根据自己定义的变量，用户变量不用提前声明，在用的时候直接 ‘@变量名’ 使用就可以。其作用域为当前连接。
+
+
+
+- 赋值
+
+  ```sql
+  set @var_name = expr [,@var_name = expr]...;
+  set @var_name := expr [,@var_name := expr]...;
+  ```
+
+  ```sql
+  select @var_name :=expr [,@var_name := expr]...;
+  select 字段名 into @var_name from 表名;
+  
+  # 将tb_user的查询结果 赋值为变量var_count
+  select count(*) into @var_count from tb_user
+  ```
+
+- 使用
+
+  ```sql
+  select @var_name;
+  ```
+
+**局部变量**
+
+> 局部变量是根据需要定义的在局部生效的变量，访问之前，需要declare声明。可用作存储过程内的局部变量和输出参数，局部变量的范围是在 begin....end;块内声明。
+
+- 声明
+
+  ```sql
+  declare 变量名 变量类型[default ...];
+  ```
+
+  变量类型就是数据库字段类型：int，bigint，char，varchar，date，time等
+
+- 赋值
+
+  ```sql
+  set 变量名 = 值;
+  set 变量名 := 值;
+  select 字段名 into 变量名 from 表名;
+  ```
+
+##### if
+
+
+
+**参数**
+
+- in： 该参数作为输入，也就是调用时传入值；默认为in参数。
+- out：该参数作为输出，作为返回值
+- inout：既可以作为输入参数，又可以作为输出参数
+
+```sql
+create procedure p1(in score int , out result varchar(10))
+begin
+	if(score>=85) then
+		set result := '优秀';
+	elseif(score<=65) then
+		set result := '及格';
+	ELSE
+		set result := '不及格';
+	end if;
+end;
+
+# 输出参数为自定义的用户变量
+call p1(75,@result);
+select @result
+```
+
+ 
+
+##### case
+
+语法一：
+
+```sql
+case case_value
+	when when_value1 then statement_list
+	[when when_value2 then statement_list2]...
+	[else statement_list]
+end case;
+```
+
+语法二：
+
+```sql
+case 
+	when search_condition1 then statement_list
+	[when search_condition2 then statement_list2]..
+	[else statement_list]
+end case;
+```
+
+
+
+##### while
+
+语法：
+
+```sql
+while 条件 do
+	SQL逻辑...
+end while;
+```
+
+
+
+##### repeat
+
+> repeat 是有条件的循环控制语句，当满足条件时退出循环。
+
+语法：
+
+```sql
+# SQL语句会先执行一次，再进行条件判断是否退出循环
+repeat 
+	SQL逻辑...
+	until 条件
+end repeat;
+```
+
+
+
+##### loop
+

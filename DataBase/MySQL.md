@@ -1553,3 +1553,235 @@ end repeat;
 
 ##### loop
 
+> loop实现简单循环，如果不在SQL的逻辑中则增加退出循环的条件，可以用其来实现简单的死循环。
+
+loop可配合一下两个语句使用：
+
+- leave：退出循环；
+- iterate：必须用在循环中，跳过当前循环剩下的语句，直接进入下一次循环。
+
+```sql
+[begin_label:] loop
+	SQL逻辑...
+end loop [end_label];
+
+# 退出指定的标记循环体
+leave label;
+
+# 直接进入下一次循环
+iterate label;
+```
+
+##### 游标
+
+> 游标（cursor）是用来存储查询结果集的数据类型，在存储过程和函数中可以使用游标对结果集进行循环的处理。游标的使用包括游标的声明，open，fetch和close，其语法如下：
+
+- 声明游标
+
+  ```sql
+  declare 游标名称 cursor for 查询语句;
+  ```
+
+- 打开游标
+
+  ```sql
+  open 游标名称;
+  ```
+
+- 获取游标记录
+
+  ```sql
+  fetch 游标名称 into 变量 [，变量];
+  ```
+
+- 关闭游标
+
+  ```sql
+  close 游标名称;
+  ```
+
+
+
+##### 条件处理程序
+
+> 条件处理程序（handler）可以用来定义在流程控制结构执行过程中遇到**问题**时相应的处理步骤。
+
+语法：
+
+```sql
+declare handler_action handler for condition_value [,condition_value]...statement;
+# 例子: 当sqlstate为0200时，退出并关闭游标
+declare exit handler for sqlstate '0200' close u_cursor
+
+# 字段解释：
+handler_action 分类
+	continue:继续执行当前程序
+	exit:终止执行当前程序
+	
+condition_value 分类
+	sqlstate sqlstate_value:状态码 如200
+	sqlwarning:所有以01开头的sqlstate代码的简写
+	not found:所有以02开头的sqlstate代码的简写
+	sqlexception:所有没有被sqlwarning或not found捕获的sqlstate代码的简写
+```
+
+
+
+#### 10.3 存储函数
+
+> 存储函数是有返回值的存储过程，存储函数的参数只能是in类型。
+
+语法：
+
+```sql
+create function 存储函数名称([参数列表])
+returns type [characteristic...]
+begin
+	--SQL语句
+	return...;
+end;
+
+# characteristic说明
+- deterministic: 相同的输入参数总产生相同的结果
+- NO SQL：不包含SQL语句
+- reads sql data：包含读取数据的语句，但不包含写入数据的语句
+```
+
+能够使用存储函数的地方，可以使用存储过程替代。
+
+
+
+#### 10.4 触发器
+
+> 触发器是与表有关的数据库对象，指在insert/update/delete之前或之后，触发并执行触发器中定义的SQL语句集合。
+>
+> 触发器的这种特性 可以协助应用在数据库端保证数据的完整性，日志记录，数据校验等操作。
+>
+> 使用别名old和new来引用触发器中发生变化的记录内容，这与其他数据库是相似的。
+>
+> 现在触发器还是支持行级触发，不支持语句级触发。
+
+
+
+| 触发器类型      | new 和 old                                           |
+| --------------- | ---------------------------------------------------- |
+| insert 型触发器 | new表示将要或者已经新增的数据                        |
+| update型触发器  | old表示修改之前的数据，new表示将要或已经修改后的数据 |
+| delete 型触发器 | old表示将要或者已经删除的数据                        |
+
+语法：
+
+- 创建
+
+  ```sql
+  create trigger trigger_name
+  before/after insert/update/delete
+  on table_name for each row -- 行级触发器
+  begin 
+  	trigger_stmt;
+  end;
+  ```
+
+- 查看
+
+  ```sql
+  show triggers;
+  ```
+
+- 删除
+
+  ```sql
+  drop trigger [schema_name]trigger_name; -- 如果没有指定schema_name,默认当前数据库
+  ```
+
+
+
+### 11. 锁
+
+> 锁是计算机协调多个进程或线程并发访问某一资源的机制。
+
+
+
+**分类**
+
+按照锁的粒度分，
+
+- 全局锁：锁定数据库中的所有表
+- 表级锁：每次操作锁住整张表
+- 行级锁：每次操作锁住对应的行数据
+
+#### 11.1 全局锁
+
+> 全局锁就是给整个数据库实例加锁，加锁后整个数据库实例就处于只读状态，后续的DML的写语句，DDL语句，已经更新操作的事务提交语句都将阻塞。
+>
+> 典型的使用场景：做全库的逻辑备份，对所有的表进行锁定，从而获取一致性视图，保证数据完整性。
+
+语法：
+
+```sql
+# 加锁
+flush tables with red lock;
+
+#释放锁
+unlock tables;
+```
+
+特点：
+
+数据库中加全局锁，是一个比较重的操作，存在以下问题：
+
+- 如果在主库上备份，那么备份期间都不能执行更新，业务就基本上得停摆
+- 如果在从库上备份，那么从库不能执行主库同步过来的二进制日志（binlog），会导致主从延迟。
+
+
+
+在InnoDB引擎中，我们可以备份时加上--single-transaction参数来完成不加锁的一致性数据备份
+
+```sql
+mysqldump --single-transation -uroot -p123456 备份的数据库名 > 目标目录
+```
+
+
+
+#### 11.2 表级锁
+
+分类：
+
+- 表共享读锁（read lock）
+- 表独占写锁（write lock）
+
+
+
+语法：
+
+1. 加锁：lock tables 表名... read/write
+2. 释放锁：unlock tables /客户端断开连接
+
+表的读锁与写锁图：
+
+![image-20221215153809853](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221215153809853.png)
+
+![image-20221215153820599](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221215153820599.png)
+
+**读锁不会阻塞其他客户端的读，但会阻塞写。**
+
+**写锁或阻塞其他客户端的读，又会阻塞其他客户端的写。**
+
+
+
+**元数据锁（meta data lock，MDL）**
+
+> MDL加锁过程是系统自动控制，无需显示使用，在访问一张表时会自动加上。
+>
+> MDL锁的作用主要是维护表元数据的数据一致性，在表上有活动事务时，不可以对元数据进行写入操作。
+>
+> 为了避免DDL和DML冲突，保证读写一致性。
+>
+> （元数据可以理解为表结构）
+
+在MySQL5.5中引入了MDL，当对一张表进行增删改查时，加MDL读锁（共享）；当对表结构进行变更操作时，加MDL写锁（排他）；
+
+
+
+#### 11.3 行级锁
+

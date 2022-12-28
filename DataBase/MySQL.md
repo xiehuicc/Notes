@@ -1815,3 +1815,44 @@ InnoDB实现了以下两种类型的行锁：
 
 
 
+
+
+### 12. InnoDB存储引擎
+
+
+
+#### 12. 1 逻辑存储结构
+
+![image-20221228155027806](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221228155027806.png)
+
+![image-20221228155039095](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221228155039095.png)
+
+
+
+- 表空间（ibd文件）：一个MySQL实例可以对应多个表空间，用于存储记录，索引等数据。
+- 段（segment）：段用来管理多个区
+- 区（Extent）：每个区大小为1M，一个区有连续64个页
+- 页（Page）：Innodb页大小为16k，
+- 行（Row）：
+
+
+
+#### 12.2 架构
+
+MySQL5.5版本开始，默认使用innodb引擎。
+
+左侧为内存结构，右侧为磁盘结构
+
+![image-20221228155740950](https://github.com/xiehuicc/Notes/blob/main/Images/image-20221228155740950.png)
+
+![image-20221228155733167](C:/Users/xiehui/AppData/Roaming/Typora/typora-user-images/image-20221228155733167.png)
+
+
+
+
+
+#### 12.3 事务原理
+
+
+
+#### 12.4  MVCC

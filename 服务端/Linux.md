@@ -124,3 +124,16 @@ chmod 700 /home/username	#还不能成功时，设置目标服务器用户权限
 ssh username@host
 ```
 
+
+
+### 4.防火墙
+
+
+
+#### 1.开启端口
+
+```shell
+sudo firewall-cmd --zone=public --add-port=3306/tcp --permanent 
+sudo firewall-cmd --reload
+sudo firewall-cmd --zone=public --list-ports
+```
